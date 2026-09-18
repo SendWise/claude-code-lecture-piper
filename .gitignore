@@ -1,0 +1,13 @@
+# Audio genere
+*.wav
+
+# Journaux et etat local
+*.log
+*.pid
+
+# Modeles de voix Piper (volumineux, a telecharger separement)
+*.onnx
+*.onnx.json
+
+# Divers
+.DS_Store
