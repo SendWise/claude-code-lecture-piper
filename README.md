@@ -13,7 +13,7 @@ Lire de longs textes à l'écran n'est pas confortable pour tout le monde. Les e
 ## Prérequis
 
 - Windows avec WSL 2 et une distribution Ubuntu (testé sur 24.04)
-- Claude Code installé et fonctionnel dans WSL
+- Claude Code installé et fonctionnel dans WSL. Les étapes 1 à 4 et le test direct de l'étape 6 fonctionnent sans lui ; seul le déclencheur `lecture-piper` en a besoin.
 - `powershell.exe` accessible depuis WSL (c'est le cas par défaut) : WSL n'ayant pas de carte son ALSA, le `.wav` est joué côté Windows
 - Paquets : `jq`, `python3-venv`, `wget` (`setsid`, `sed`, `grep`, `find`, `pkill` sont déjà présents)
 
@@ -26,7 +26,7 @@ sudo apt update && sudo apt install -y jq python3-venv wget
 ### 1. Cloner le dépôt
 
 ```bash
-git clone https://github.com/SendWise/claude-code-lecture-piper.git
+git clone https://github.com/<votre-compte>/claude-code-lecture-piper.git
 cd claude-code-lecture-piper
 ```
 
@@ -39,7 +39,7 @@ python3 -m venv "$HOME/piper-venv"
 "$HOME/piper-venv/bin/pip" install piper-tts
 ```
 
-Testé avec `piper-tts` 1.7.0.
+Testé avec `piper-tts` 1.7.0 et 1.8.0. Le paquet s'appelle `piper-tts`, le binaire installé s'appelle `piper` et reste dans le venv : il n'est pas ajouté au PATH, c'est normal.
 
 ### 3. Récupérer la voix française
 
@@ -58,14 +58,25 @@ D'autres voix françaises existent (`fr_FR-upmc-medium`, `fr_FR-gilles-low`) : v
 ### 4. Installer les scripts
 
 ```bash
+mkdir -p "$HOME/.claude"
 cp scripts/lecture-piper.sh "$HOME/lecture-piper.sh"
 cp scripts/hook-userpromptsubmit.sh "$HOME/.claude/hook-userpromptsubmit.sh"
 chmod +x "$HOME/lecture-piper.sh" "$HOME/.claude/hook-userpromptsubmit.sh"
 ```
 
+Le `mkdir -p` est nécessaire sur une machine où Claude Code n'a jamais tourné : le dossier `~/.claude` n'existe pas encore. S'il existe déjà, la commande ne fait rien.
+
 ### 5. Déclarer le hook
 
-Dans `~/.claude/settings.json`, ajouter le bloc `hooks` (voir `examples/settings.hooks.json` pour un fichier complet) :
+Deux cas de figure.
+
+**Si `~/.claude/settings.json` n'existe pas encore** (Claude Code jamais lancé, ou aucun réglage personnalisé), le fichier d'exemple fourni suffit tel quel :
+
+```bash
+cp examples/settings.hooks.json "$HOME/.claude/settings.json"
+```
+
+**S'il existe déjà**, ne l'écrasez pas : ajoutez-y le bloc `hooks` (voir `examples/settings.hooks.json` pour la structure complète) :
 
 ```json
 "hooks": {
@@ -98,7 +109,9 @@ Hors de Claude Code, directement :
 ~/lecture-piper.sh "Bonjour, ceci est un test de lecture vocale."
 ```
 
-Puis dans Claude Code : poser une question, attendre la réponse, envoyer `lecture-piper` comme message unique. Le message jaune « Lecture audio lancee. » confirme le déclenchement.
+Cette première commande ne dépend pas de Claude Code : elle valide l'installation de Piper, de la voix et de la lecture audio via PowerShell. Si vous testez sur une distribution neuve, c'est le point d'arrêt possible.
+
+Le test complet suppose Claude Code installé. Dans Claude Code : poser une question, attendre la réponse, envoyer `lecture-piper` comme message unique. Le message jaune « Lecture audio lancee. » confirme le déclenchement.
 
 ## Utilisation
 
