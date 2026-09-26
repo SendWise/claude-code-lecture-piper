@@ -4,7 +4,7 @@
 
 Vous tapez `lecture-piper` comme message dans Claude Code : la réponse précédente est lue à voix haute par [Piper TTS](https://github.com/rhasspy/piper). Aucun texte n'est envoyé à un service tiers, aucun token n'est consommé (le message n'atteint jamais le modèle).
 
-Conçu et testé sur **Windows + WSL/Ubuntu 24.04**, Claude Code 2.1.x.
+Conçu sur **Windows + WSL/Ubuntu 24.04**, Claude Code 2.1.x. Installation revalidée de bout en bout sur une distribution Ubuntu 22.04 neuve.
 
 ## Pourquoi
 
@@ -68,15 +68,21 @@ Le `mkdir -p` est nécessaire sur une machine où Claude Code n'a jamais tourné
 
 ### 5. Déclarer le hook
 
-Deux cas de figure.
+Claude Code crée `~/.claude/settings.json` dès sa première session (ne serait-ce que pour y stocker le thème). Le fichier existe donc presque toujours, et l'écraser ferait perdre vos réglages. La commande suivante y ajoute le bloc `hooks` en préservant le reste :
 
-**Si `~/.claude/settings.json` n'existe pas encore** (Claude Code jamais lancé, ou aucun réglage personnalisé), le fichier d'exemple fourni suffit tel quel :
+```bash
+jq '. + {hooks:{UserPromptSubmit:[{hooks:[{type:"command",command:"$HOME/.claude/hook-userpromptsubmit.sh",timeout:10}]}]}}' \
+  ~/.claude/settings.json > /tmp/settings.json && mv /tmp/settings.json ~/.claude/settings.json
+cat ~/.claude/settings.json
+```
+
+Si le fichier n'existe pas encore (Claude Code jamais lancé), l'exemple fourni suffit tel quel :
 
 ```bash
 cp examples/settings.hooks.json "$HOME/.claude/settings.json"
 ```
 
-**S'il existe déjà**, ne l'écrasez pas : ajoutez-y le bloc `hooks` (voir `examples/settings.hooks.json` pour la structure complète) :
+Structure attendue dans les deux cas :
 
 ```json
 "hooks": {
@@ -108,6 +114,8 @@ Hors de Claude Code, directement :
 ```bash
 ~/lecture-piper.sh "Bonjour, ceci est un test de lecture vocale."
 ```
+
+Sur une distribution fraîchement installée, si cette commande échoue avec `Exec format error`, redémarrer WSL (voir Dépannage) avant d'aller plus loin.
 
 Cette première commande ne dépend pas de Claude Code : elle valide l'installation de Piper, de la voix et de la lecture audio via PowerShell. Si vous testez sur une distribution neuve, c'est le point d'arrêt possible.
 
@@ -169,6 +177,7 @@ Les alternatives écartées et le détail du raisonnement sont dans [`docs/choix
 | Deux voix superposées | PID file corrompu ou processus PowerShell orphelin : `pkill -f claude_voice.wav` |
 | Aucun son | tester `powershell.exe -c "[console]::beep(800,300)"` depuis WSL |
 | Erreur de modèle introuvable | vérifier que `PIPER_MODEL` pointe vers un `.onnx` existant, et que le `.onnx.json` est à côté |
+| `powershell.exe: cannot execute binary file: Exec format error` | l'interop Windows de WSL n'est pas opérationnelle dans le processus détaché. Redémarrer WSL depuis PowerShell (`wsl --shutdown`) puis rouvrir la distribution. Observé sur une distribution fraîchement installée, résolu après redémarrage |
 | Journal | `~/.claude/lecture-piper.log` |
 
 ## Licence
